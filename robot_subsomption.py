@@ -1,0 +1,61 @@
+from robot import * 
+
+nb_robots = 0
+debug = True
+
+class Robot_player(Robot):
+
+    team_name = "Dumb"
+    robot_id = -1
+    iteration = 0
+
+    def __init__(self, x_0, y_0, theta_0, name="n/a", team="n/a"):
+        global nb_robots
+        self.robot_id = nb_robots
+        nb_robots+=1
+        super().__init__(x_0, y_0, theta_0, name=name, team=team)
+
+
+
+    def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
+
+        sensor_to_wall = []
+        sensor_to_robot = []
+        for i in range (0,8):
+            if  sensor_view[i] == 1:
+                sensor_to_wall.append( sensors[i] )
+                sensor_to_robot.append(1.0)
+            elif  sensor_view[i] == 2:
+                sensor_to_wall.append( 1.0 )
+                sensor_to_robot.append( sensors[i] )
+            else:
+                sensor_to_wall.append(1.0)
+                sensor_to_robot.append(1.0)
+
+        if debug == True:
+            if self.iteration % 100 == 0:
+                print ("Robot",self.robot_id," (team "+str(self.team_name)+")","at step",self.iteration,":")
+                print ("\tsensors (distance, max is 1.0)  =",sensors)
+                print ("\t\tsensors to wall  =",sensor_to_wall)
+                print ("\t\tsensors to robot =",sensor_to_robot)
+                print ("\ttype (0:empty, 1:wall, 2:robot) =",sensor_view)
+                print ("\trobot's name (if relevant)      =",sensor_robot)
+                print ("\trobot's team (if relevant)      =",sensor_team)
+
+        if(sensors[sensor_front]<0.2):
+            translation = -0.5
+            rotation = 0
+        elif(min(sensor_to_robot)==min(sensors)):
+            translation = (sensors[sensor_front_left] + sensors[sensor_front_right]) * 0.1 + (1-(1-((sensor_to_robot[sensor_front_left] + sensor_to_robot[sensor_front_right]))*0.5))# A MODIFIER
+            rotation = (sensor_to_robot[sensor_front_right] - sensor_to_robot[sensor_front_left]) *8 + (sensor_to_robot[sensor_right] - sensor_to_robot[sensor_left]) *16  #A MODIFIER
+        elif(min(sensors) == min(sensor_to_wall)):
+            translation = abs(1.0 - abs(sensor_to_wall[sensor_front] + sensor_to_wall[sensor_front_left]*0.25 + sensor_to_wall[sensor_front_right]*0.25 - sensor_to_wall[sensor_rear] - sensor_to_wall[sensor_rear_left]*0.25 - sensor_to_wall[sensor_rear_right]*0.25))  # A MODIFIER
+            rotation = sensor_to_wall[sensor_left] + 0.5 * sensor_to_wall[sensor_front_left] - sensor_to_wall[sensor_right] - 0.5 * sensor_to_wall[sensor_front_right] + (sensor_to_wall[sensor_front]-0.5)*0.1 - (sensor_to_wall[sensor_rear]-0.5)*0.1 # A MODIFIER
+        else:
+            translation = 0.9
+            rotation = 0
+        
+        #print("translation =",translation," sens_droite =", sensor_to_robot[sensor_right])
+
+        self.iteration = self.iteration + 1        
+        return translation, rotation, False
